@@ -8,10 +8,16 @@ class Home extends BaseController
 {
 
     public function index()
-    {
-        $model = new ArtikelModel();
-        $data['artikel'] = $model->findAll();
+{
+    $model = new ArtikelModel();
 
-        return view('welcome_message', $data);
-    }
+    // Contoh tanggal, bisa kamu ganti sesuai kebutuhan atau input user
+    $startDate = '2025-01-01';
+    $endDate = '2026-04-30';
+
+    $data['artikel'] = $model->getPublishedArticlesByDate($startDate, $endDate);
+
+    return view('welcome_message', $data);
+}
+
 }

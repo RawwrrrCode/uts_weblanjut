@@ -2,105 +2,92 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\ArtikelModel;
 
 class Artikel extends BaseController
 {
     public function index()
     {
-        // Panggil model
         $model = new ArtikelModel();
+        $data['artikels'] = $model->findAll();
 
-        // Ambil semua data artikel dari database
-        $data['artikel'] = $model->findAll();
-
-        // Tampilkan view dengan data
-        return view('artikel/index', $data);
+        return view('artikel/dashboard', $data); // view sudah diperbaiki ke 'dashboard'
     }
+
     public function create()
-{
-    return view('artikel/create');
-}
-
-public function store()
-{
-    $model = new ArtikelModel();
-
-    $data = [
-        'judul'            => $this->request->getPost('judul'),
-        'slug'             => url_title($this->request->getPost('judul'), '-', true),
-        'isi'              => $this->request->getPost('isi'),
-        'tanggal_publikasi'=> $this->request->getPost('tanggal_publikasi'),
-        'status'           => $this->request->getPost('status'),
-        'author'           => $this->request->getPost('author'),
-        'meta_deskripsi'   => $this->request->getPost('meta_deskripsi'),
-        'kata_kunci'       => $this->request->getPost('kata_kunci'),
-    ];
-
-    $model->insert($data);
-
-    return redirect()->to('/artikel')->with('message', 'Artikel berhasil ditambahkan');
-}
-
-public function getArtikel($id)
-{
-    $model = new ArtikelModel();
-    $artikel = $model->find($id);
-
-    if (!$artikel) {
-        return $this->response->setStatusCode(404)->setJSON(['error' => 'Artikel tidak ditemukan']);
+    {
+        return view('artikel/create');
     }
 
-    return $this->response->setJSON($artikel);
-}
+    public function store()
+    {
+        if (!$this->validate([
+            'judul' => 'required|min_length[3]',
+            'isi' => 'required',
+            'status' => 'in_list[publish,draft]',
+        ])) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
 
-public function edit($id)
-{
-    $model = new \App\Models\ArtikelModel();
-    $artikel = $model->find($id);
+        $model = new ArtikelModel();
+        $model->save([
+            'judul' => $this->request->getPost('judul'),
+            'isi' => $this->request->getPost('isi'),
+            'status' => $this->request->getPost('status'),
+        ]);
 
-    if (!$artikel) {
-        throw new \CodeIgniter\Exceptions\PageNotFoundException('Artikel tidak ditemukan dengan ID ' . $id);
+        return redirect()->to('/artikel')->with('message', 'Artikel berhasil ditambahkan');
     }
 
-    return view('artikel/edit', ['artikel' => $artikel]);
-}
+    public function edit($id)
+    {
+        $model = new ArtikelModel();
+        $data['artikel'] = $model->find($id);
 
-public function update($id)
-{
-    $model = new \App\Models\ArtikelModel();
+        if (!$data['artikel']) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Artikel tidak ditemukan');
+        }
 
-    $data = [
-        'judul'            => $this->request->getPost('judul'),
-        'slug'             => url_title($this->request->getPost('judul'), '-', true),
-        'isi'              => $this->request->getPost('isi'),
-        'tanggal_publikasi'=> $this->request->getPost('tanggal_publikasi'),
-        'status'           => $this->request->getPost('status'),
-        'author'           => $this->request->getPost('author'),
-        'meta_deskripsi'   => $this->request->getPost('meta_deskripsi'),
-        'kata_kunci'       => $this->request->getPost('kata_kunci'),
-    ];
-
-    $model->update($id, $data);
-
-    return redirect()->to('/artikel')->with('message', 'Artikel berhasil diperbarui');
-}
-
-public function delete($id)
-{
-    $model = new \App\Models\ArtikelModel();
-
-    // Cek apakah artikel ada
-    $artikel = $model->find($id);
-    if (!$artikel) {
-        throw new \CodeIgniter\Exceptions\PageNotFoundException('Artikel tidak ditemukan dengan ID ' . $id);
+        return view('artikel/edit', $data);
     }
 
-    // Hapus artikel
-    $model->delete($id);
+    public function update($id)
+    {
+        if (!$this->validate([
+            'judul' => 'required|min_length[3]',
+            'isi' => 'required',
+            'status' => 'in_list[publish,draft]',
+        ])) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
 
-    return redirect()->to('/artikel')->with('message', 'Artikel berhasil dihapus');
-}
+        $model = new ArtikelModel();
+        $model->update($id, [
+            'judul' => $this->request->getPost('judul'),
+            'isi' => $this->request->getPost('isi'),
+            'status' => $this->request->getPost('status'),
+        ]);
 
+        return redirect()->to('/artikel')->with('message', 'Artikel berhasil diperbarui');
+    }
 
+    public function delete($id)
+    {
+        if ($this->request->getMethod(true) !== 'DELETE') {
+            return redirect()->back()->with('error', 'Metode tidak diizinkan');
+        }
+
+        $model = new ArtikelModel();
+        $artikel = $model->find($id);
+
+        if (!$artikel) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Artikel tidak ditemukan dengan ID ' . $id);
+        }
+
+        $model->delete($id);
+        return redirect()->to('/artikel')->with('message', 'Artikel berhasil dihapus');
+    }
+
+    
 }

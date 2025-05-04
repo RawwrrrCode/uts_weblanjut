@@ -10,9 +10,8 @@ class ArtikelModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
-    protected $useSoftDeletes   = false;
+    protected $useSoftDeletes   = true;
 
-    // Kolom yang diizinkan untuk insert/update
     protected $allowedFields    = [
         'judul',
         'slug',
@@ -34,20 +33,17 @@ class ArtikelModel extends Model
     protected array $casts = [];
     protected array $castHandlers = [];
 
-    // Nonaktifkan auto timestamp kalau tidak digunakan
     protected $useTimestamps = false;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    // Validation
     protected $validationRules      = [];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
-    // Callbacks
     protected $allowCallbacks = true;
     protected $beforeInsert   = [];
     protected $afterInsert    = [];
@@ -57,4 +53,19 @@ class ArtikelModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    // Fungsi untuk mengambil artikel dengan status publish dan rentang tanggal publikasi
+    public function getPublishedArticlesByDate($startDate, $endDate)
+    {
+        return $this->where('status', 'publish')
+                    ->where('tanggal_publikasi >=', $startDate)
+                    ->where('tanggal_publikasi <=', $endDate)
+                    ->findAll();
+    }
+
+    public function updateStatus($id, $status)
+{
+    return $this->update($id, ['status' => $status]);
+}
+
 }
